@@ -15,6 +15,8 @@ use AsyncPHP\Doorman\Shell;
 use AsyncPHP\Doorman\Shell\BashShell;
 use AsyncPHP\Doorman\Task;
 use SplObjectStorage;
+use SplFileInfo;
+use InvalidArgumentException;
 
 final class ProcessManager implements Manager
 {
@@ -94,8 +96,8 @@ final class ProcessManager implements Manager
 
     /**
      * @inheritdoc
-     *
      * @return bool
+     * @throws InvalidArgumentException
      */
     public function tick()
     {
@@ -362,12 +364,28 @@ final class ProcessManager implements Manager
 
     /**
      * @param string $binary
-     *
      * @return $this
+     * @throws InvalidArgumentException
      */
     public function setBinary($binary)
     {
-        $this->binary = $binary;
+        $binary = new SplFileInfo($binary);
+
+        if (!$binary->isFile()) {
+            throw new InvalidArgumentException(sprintf(
+                'The binary [%s] does not exists.',
+                $binary->getPathname()
+            ));
+        }
+
+        if (!$binary->isExecutable()) {
+            throw new InvalidArgumentException(sprintf(
+                'The binary [%s] is not executable.',
+                $binary->getPathname()
+            ));
+        }
+
+        $this->binary = $binary->getRealPath();
 
         return $this;
     }
@@ -376,11 +394,28 @@ final class ProcessManager implements Manager
      * Gets the path of the PHP runtime.
      *
      * @return string
+     * @throws InvalidArgumentException
      */
     public function getBinary()
     {
         if ($this->binary === null) {
-            $this->binary = PHP_BINDIR . "/php";
+            $binary = new SplFileInfo(PHP_BINDIR . "/php");
+
+            if (!$binary->isFile()) {
+                throw new InvalidArgumentException(sprintf(
+                    'The binary [%s] does not exists. Provide a valid binary path via ProcessManager::setBinary().',
+                    $binary->getPathname()
+                ));
+            }
+
+            if (!$binary->isExecutable()) {
+                throw new InvalidArgumentException(sprintf(
+                    'The binary [%s] is not executable.',
+                    $binary->getPathname()
+                ));
+            }
+
+            $this->binary = $binary->getRealPath();
         }
 
         return $this->binary;

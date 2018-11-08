@@ -10,7 +10,7 @@ interface Shell
      * @param string $format
      * @param array $parameters
      *
-     * @return string
+     * @return string|array
      */
     public function exec($format, array $parameters = []);
 }
